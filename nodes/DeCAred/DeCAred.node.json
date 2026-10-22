@@ -1,0 +1,14 @@
+{
+	"node": "@aykenet/n8n-nodes-decared.deCAred",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Productivity"],
+	"resources": {
+		"credentialDocumentation": [
+			{ "url": "https://github.com/Aykenet-Desarrollo/n8n-nodes-decared?tab=readme-ov-file#credentials" }
+		],
+		"primaryDocumentation": [
+			{ "url": "https://github.com/Aykenet-Desarrollo/n8n-nodes-decared?tab=readme-ov-file" }
+		]
+	}
+}
