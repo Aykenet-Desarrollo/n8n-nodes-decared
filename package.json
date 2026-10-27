@@ -1,6 +1,6 @@
 {
 	"name": "@aykenet/n8n-nodes-decared",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "n8n nodes for DeCAred: Spanish road-transport control documents (DeCA), drafts, master data and instant document events.",
 	"license": "MIT",
 	"homepage": "https://decared.com/integraciones/documentacion",
@@ -21,6 +21,7 @@
 	},
 	"scripts": {
 		"build": "n8n-node build",
+		"test": "tsc && node --test tests/*.test.cjs",
 		"build:watch": "tsc --watch",
 		"dev": "n8n-node dev",
 		"lint": "n8n-node lint",

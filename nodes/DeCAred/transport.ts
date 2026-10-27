@@ -25,6 +25,7 @@ export interface ApiErrorDetails {
 	httpCode: string;
 	code: string | null;
 	requestId: string | null;
+	retryAfter: string | null;
 }
 
 /**
@@ -45,7 +46,7 @@ export async function apiRequest(
 		qs: options.qs,
 		body: options.body,
 		json: !options.binary,
-		headers: { Accept: options.binary ? 'application/pdf' : 'application/json' },
+		headers: { Accept: options.binary ? '*/*' : 'application/json' },
 		returnFullResponse: true,
 		ignoreHttpStatusErrors: true,
 	};
@@ -73,6 +74,7 @@ export async function apiRequest(
 	}
 	const details: ApiErrorDetails = {
 		httpCode: String(status),
+		retryAfter: response.headers?.['retry-after'] ? String(response.headers['retry-after']) : null,
 		code: (body.code as string) ?? null,
 		requestId:
 			(body.request_id as string) ?? (response.headers?.['x-request-id'] as string) ?? null,

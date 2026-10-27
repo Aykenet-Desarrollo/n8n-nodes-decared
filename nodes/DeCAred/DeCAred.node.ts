@@ -1,3 +1,4 @@
+/* eslint-disable @n8n/community-nodes/node-usable-as-tool -- Confirmation requires a reviewed proposal, not an AI tool call. */
 import {
 	NodeApiError,
 	NodeConnectionTypes,
@@ -18,6 +19,14 @@ import {
 } from './descriptions';
 import { apiErrorDetails, apiRequest, apiRequestAll, clean } from './transport';
 
+import {
+	workflowFields,
+	workflow,
+	tracking,
+	objectParameter,
+	downloadAttachment,
+} from './operations';
+
 const MASTER_PATHS: Record<string, string> = {
 	counterparty: '/counterparties',
 	vehicle: '/vehicles',
@@ -25,6 +34,8 @@ const MASTER_PATHS: Record<string, string> = {
 };
 
 export class DeCAred implements INodeType {
+	// Confirmation needs a reviewed proposal; do not expose the whole node as an AI tool.
+
 	description: INodeTypeDescription = {
 		displayName: 'DeCAred',
 		name: 'deCAred',
@@ -35,7 +46,6 @@ export class DeCAred implements INodeType {
 		description:
 			'Create DeCA drafts, keep master data in sync and fetch issued transport documents and their PDFs',
 		defaults: { name: 'DeCAred' },
-		usableAsTool: true,
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		credentials: [{ name: 'deCAredApi', required: true }],
@@ -46,11 +56,14 @@ export class DeCAred implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
+					{ name: 'Attachment', value: 'attachment' },
 					{ name: 'Counterparty', value: 'counterparty' },
 					{ name: 'Document', value: 'document' },
 					{ name: 'Draft', value: 'draft' },
 					{ name: 'Driver', value: 'driver' },
+					{ name: 'Tracking', value: 'tracking' },
 					{ name: 'Vehicle', value: 'vehicle' },
+					{ name: 'Workflow', value: 'workflow' },
 				],
 				default: 'document',
 			},
@@ -59,6 +72,7 @@ export class DeCAred implements INodeType {
 			...counterpartyFields,
 			...vehicleFields,
 			...driverFields,
+			...workflowFields,
 		],
 	};
 
@@ -71,13 +85,22 @@ export class DeCAred implements INodeType {
 				const resource = this.getNodeParameter('resource', i) as string;
 				const operation = this.getNodeParameter('operation', i) as string;
 
+				if (resource === 'attachment') {
+					results.push(await downloadAttachment.call(this, i));
+					continue;
+				}
+
 				if (resource === 'document' && operation === 'downloadPdf') {
 					results.push(await downloadPdf.call(this, i));
 					continue;
 				}
 
 				let data: IDataObject | IDataObject[];
-				if (resource === 'document') {
+				if (resource === 'workflow') {
+					data = await workflow.call(this, operation, i);
+				} else if (resource === 'tracking') {
+					data = await tracking.call(this, operation, i);
+				} else if (resource === 'document') {
 					data = await documents.call(this, operation, i);
 				} else if (resource === 'draft') {
 					data = await drafts.call(this, operation, i);
@@ -103,6 +126,7 @@ export class DeCAred implements INodeType {
 							error_code: details?.code ?? null,
 							http_code: details?.httpCode ?? null,
 							request_id: details?.requestId ?? null,
+							retry_after: details?.retryAfter ?? null,
 							...(existing ? { existing } : {}),
 						},
 						pairedItem: { item: i },
@@ -195,6 +219,17 @@ async function drafts(
 	if (operation === 'get') {
 		const id = this.getNodeParameter('draftId', i) as number;
 		return (await apiRequest.call(this, 'GET', `/drafts/${id}`)).data;
+	}
+	if (operation === 'update') {
+		const id = this.getNodeParameter('draftId', i) as number;
+		return (
+			await apiRequest.call(this, 'PATCH', '/drafts/' + id, {
+				body: {
+					revision: this.getNodeParameter('revision', i) as number,
+					data: objectParameter(this, 'changes', i),
+				},
+			})
+		).data;
 	}
 	if (operation === 'getAll') {
 		const filters = clean(this.getNodeParameter('filters', i, {}) as IDataObject);

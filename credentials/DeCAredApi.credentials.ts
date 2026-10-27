@@ -25,7 +25,7 @@ export class DeCAredApi implements ICredentialType {
 			default: '',
 			placeholder: 'dcr_…',
 			description:
-				'Create it in DeCAred → Más → Integraciones. General read and write keys cover every operation. With specific permissions, the trigger needs webhooks:manage and each operation its own permission, for example documents:read or drafts:write.',
+				'Create it in DeCAred → Más → Integraciones. API 1.3 workflow actions, tracking and draft editing require explicit scopes; general read/write do not include them. With specific permissions, the trigger needs webhooks:manage and each operation its own permission, for example documents:read or drafts:write.',
 		},
 		{
 			displayName: 'Base URL',

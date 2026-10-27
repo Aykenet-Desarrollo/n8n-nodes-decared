@@ -13,6 +13,8 @@ annulled.
 
 ## Installation
 
+**Publication pending:** the npm account and organization are not yet available. Until publication, use the standard-node JSON templates at [DeCAred documentation](https://decared.com/integraciones/documentacion#n8n). The following installation applies after publication.
+
 Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community
 nodes documentation and install `@aykenet/n8n-nodes-decared`.
 
@@ -23,17 +25,21 @@ nodes documentation and install `@aykenet/n8n-nodes-decared`.
 | Resource | Operations |
 |---|---|
 | Document | Get, Get Many (filter by reference, external reference, status, type, updated since), Download PDF |
-| Draft | Create, Get, Get Many (filter by external reference, updated since) |
+| Draft | Update (revision required), Create, Get, Get Many (filter by external reference, updated since) |
 | Counterparty | Create or Update (by NIF), Get Many |
 | Vehicle | Create or Update (by plate), Get Many |
 | Driver | Create or Update (by NIF), Get Many |
+| Workflow | Prepare (issue, correct, close, annul, resend, report_issue, resolve_issue, message), Get status, Confirm with explicit approval |
+| Tracking | Get summary, Get Many (six collections, paginated) |
+| Attachment | Download with SHA-256 verification |
 
-The API never issues documents: a draft is reviewed and issued by the office in DeCAred, or completed and issued by
-the driver from the phone when the company allows it. Sending the same *External Reference* again returns the existing
+API 1.3 also supports office operations: prepare a proposal, review its exact summary, and separately confirm it with the same API key within 15 minutes. Never automatically approve the prepare response. Sending the same *External Reference* again returns the existing
 draft instead of creating a duplicate. Sending that reference with different data fails with
 `external_reference_conflict` (HTTP 409) and nothing is overwritten: the error names the existing draft or document so
 someone can review it. To route these cases to a review branch, set the node's **On Error** setting to *Continue (using
 error output)*; each failed item carries `error`, `error_code`, `http_code`, `request_id` and, for conflicts, `existing`.
+
+Preparation accepts a JSON proposal. Uploading attachments requires an HTTP Request node with multipart (up to three JPEG/PNG/PDF files of 1 MiB each); it is not an upload option in this node. Confirmation defaults to Approved=false and sends exactly one request. No automatic retries are implemented. The node is not exposed as an AI tool.
 
 **DeCAred Trigger** node
 
@@ -48,7 +54,7 @@ internet over HTTPS (n8n Cloud, or a self-hosted instance behind HTTPS).
 
 1. Your company needs the DeCAred API, which is included in the *Documentos ilimitados + carta de porte* plan.
 2. In DeCAred, go to **Más → Integraciones** and create a key. Only the *titular* or a *responsable* can do it.
-   - General **read** and **write** keys cover every operation (read includes the trigger).
+   - General **read** and **write** keys cover the original operations (read includes the trigger). API 1.3 requires explicit scopes: `drafts:edit`, `tracking:read`, `attachments:read`, `documents:issue/correct/close/annul/resend` (choose each separately), `issues:report`, `issues:manage`, `messages:send`.
    - With specific permissions, give the key only what the workflow uses:
 
      | Node / operation | Permission |
@@ -69,7 +75,7 @@ Built and tested with n8n 2.44 (`n8nNodesApiVersion` 1). No runtime dependencies
 
 ## Usage
 
-- Use the document `id` from the trigger with **Document → Download PDF** to get the signed PDF as binary data, then
+- Use the document `id` from the trigger with **Document → Download PDF** to get the issued PDF as binary data, then
   attach it to an email or upload it to your storage.
 - Delivery is at least once: if your workflow must not run twice for the same event, deduplicate by `event_id`.
 - The API allows 120 requests per minute per key; above that it answers `429` with `Retry-After`.
@@ -82,6 +88,10 @@ Built and tested with n8n 2.44 (`n8nNodesApiVersion` 1). No runtime dependencies
 - [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
 
 ## Version history
+
+### 0.2.0
+
+API 1.3 office proposals and explicit confirmation, draft updates, tracking, verified attachment downloads and Retry-After error metadata. npm publication and Microsoft validation remain pending.
 
 ### 0.1.0
 

@@ -171,7 +171,7 @@ export const draftFields: INodeProperties[] = [
 				value: 'create',
 				action: 'Create a de ca draft',
 				description:
-					'Create a draft for the office to review and issue. The API never issues documents.',
+					'Create a draft for the office to review and issue. Issue requires a separate approved workflow operation.',
 			},
 			{
 				name: 'Get',
@@ -185,6 +185,7 @@ export const draftFields: INodeProperties[] = [
 				action: 'Get many drafts',
 				description: 'List drafts not issued yet, for example the one of an order reference',
 			},
+			{ name: 'Update', value: 'update', action: 'Update a draft' },
 		],
 		default: 'create',
 	},
@@ -212,7 +213,7 @@ export const draftFields: INodeProperties[] = [
 		name: 'draftId',
 		type: 'number',
 		required: true,
-		displayOptions: show('draft', ['get']),
+		displayOptions: show('draft', ['get', 'update']),
 		default: 0,
 	},
 	{
